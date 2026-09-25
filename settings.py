@@ -24,7 +24,7 @@ DEFAULTS: dict[str, Any] = {
     "long_context_model": "deepseek-chat",
     "keep_last_n_turns": 6,
     "drop_old_tool_noise": True,
-    "event_log": "~/.hermes/jev-router/events.jsonl",
+    "event_log": "",  # 空 → $HERMES_HOME/jev-router/events.jsonl
     "auto_approve_enabled": False,
     "auto_approve_confidence": 0.80,
     "auto_approve_timeout_seconds": 8.0,
@@ -145,7 +145,8 @@ def load_settings(plugin_settings: dict[str, Any] | None = None) -> dict[str, An
             cfg[key] = _as_float(cfg.get(key), default)
         elif isinstance(default, int):
             cfg[key] = int(_as_float(cfg.get(key), float(default)))
-    cfg["event_log"] = str(Path(str(cfg.get("event_log") or DEFAULTS["event_log"])).expanduser())
+    event_log = cfg.get("event_log") or (home / "jev-router" / "events.jsonl")
+    cfg["event_log"] = str(Path(str(event_log)).expanduser())
     return cfg
 
 
