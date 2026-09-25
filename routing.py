@@ -4,19 +4,22 @@ from __future__ import annotations
 import os
 import sys
 import threading
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
 try:
     from .settings import candidate_labels, load_settings
-    from .events import emit
+    from .events import emit, scrub
+    from .timeouts import FuturesTimeout, call_with_timeout
 except ImportError:
     from settings import candidate_labels, load_settings
-    from events import emit
+    from events import emit, scrub
+    from timeouts import FuturesTimeout, call_with_timeout
 
-# 回合级缓存：pre_llm_call 写，llm_request middleware 读
-_TURN_DECISIONS: dict[str, dict[str, Any]] = {}
+# 回合级缓存：pre_llm_call 写，llm_request middleware 读（同一回合可能多次读，故读不删；按 LRU 限长）
+_TURN_DECISIONS: OrderedDict[str, dict[str, Any]] = OrderedDict()
+_MAX_CACHED_DECISIONS = 256
 _lock = threading.Lock()
 
 
@@ -167,9 +170,7 @@ def route_turn(
         return _jev_choice(user_message, cfg, meta)
 
     try:
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            fut = pool.submit(_call)
-            out = fut.result(timeout=timeout)
+        out = call_with_timeout(_call, timeout)
     except FuturesTimeout:
         out = {
             "label": "primary",
@@ -187,10 +188,10 @@ def route_turn(
             "fallback": True,
             "reason": f"jev_error:{type(exc).__name__}",
             "backend": "typesafe",
-            "error": str(exc)[:200],
+            "error": scrub(str(exc))[:200],
         }
 
-    if float(out.get("confidence") or 0) < min_conf:
+    if not out.get("fallback") and float(out.get("confidence") or 0) < min_conf:
         out = {
             **out,
             "model": primary,
@@ -206,6 +207,9 @@ def route_turn(
 def cache_decision(key: str, decision: dict[str, Any]) -> None:
     with _lock:
         _TURN_DECISIONS[key] = decision
+        _TURN_DECISIONS.move_to_end(key)
+        while len(_TURN_DECISIONS) > _MAX_CACHED_DECISIONS:
+            _TURN_DECISIONS.popitem(last=False)
 
 
 def pop_decision(key: str) -> dict[str, Any] | None:
