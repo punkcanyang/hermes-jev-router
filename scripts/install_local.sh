@@ -4,8 +4,12 @@ set -euo pipefail
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="${HERMES_HOME:-$HOME/.hermes}/plugins/jev-router"
 mkdir -p "$(dirname "$DEST")"
-if [[ -e "$DEST" || -L "$DEST" ]]; then
-  rm -rf "$DEST"
+if [[ -L "$DEST" ]]; then
+  rm -f "$DEST"
+elif [[ -e "$DEST" ]]; then
+  BACKUP="$DEST.bak.$(date +%Y%m%d%H%M%S)"
+  mv "$DEST" "$BACKUP"
+  echo "moved existing $DEST -> $BACKUP"
 fi
 ln -s "$SRC" "$DEST"
 echo "symlink: $DEST -> $SRC"
