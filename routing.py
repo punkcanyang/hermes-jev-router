@@ -20,12 +20,29 @@ _TURN_DECISIONS: dict[str, dict[str, Any]] = {}
 _lock = threading.Lock()
 
 
+def _typesafe_site_dirs() -> list[Path]:
+    """typesafe_sdk 不在 Hermes 解释器里时，从环境变量指定的 venv 补路径。
+
+    JEV_ROUTER_TYPESAFE_SITE_PACKAGES：site-packages 目录（可用 os.pathsep 分隔多个）
+    JEV_ROUTER_TYPESAFE_VENV：venv 根目录；只取与当前解释器同版本的 site-packages
+    """
+    dirs: list[Path] = []
+    explicit = os.environ.get("JEV_ROUTER_TYPESAFE_SITE_PACKAGES", "").strip()
+    if explicit:
+        dirs.extend(Path(p).expanduser() for p in explicit.split(os.pathsep) if p.strip())
+    venv = os.environ.get("JEV_ROUTER_TYPESAFE_VENV", "").strip()
+    if venv:
+        ver = f"python{sys.version_info.major}.{sys.version_info.minor}"
+        dirs.append(Path(venv).expanduser() / "lib" / ver / "site-packages")
+    return [d for d in dirs if d.is_dir()]
+
+
 def _ensure_typesafe_path() -> None:
-    venv_site = Path("/workspace/tools/typesafe-venv/lib/python3.13/site-packages")
-    if venv_site.is_dir():
-        p = str(venv_site)
+    # append 而非 insert(0)：不遮蔽 Hermes 自己的依赖
+    for d in _typesafe_site_dirs():
+        p = str(d)
         if p not in sys.path:
-            sys.path.insert(0, p)
+            sys.path.append(p)
 
 
 def _heuristic_route(text: str, cfg: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
