@@ -24,6 +24,10 @@ DEFAULTS: dict[str, Any] = {
     "keep_last_n_turns": 6,
     "drop_old_tool_noise": True,
     "event_log": "~/.hermes/jev-router/events.jsonl",
+    "auto_approve_enabled": False,
+    "auto_approve_confidence": 0.80,
+    "auto_approve_timeout_seconds": 8.0,
+    "auto_approve_hardline_enabled": False,
 }
 
 _ENV_MAP = {
@@ -34,6 +38,10 @@ _ENV_MAP = {
     "JEV_ROUTER_PRIMARY_MODEL": ("primary_model", "str"),
     "JEV_ROUTER_CHEAP_MODEL": ("cheap_model", "str"),
     "JEV_ROUTER_COMPLEX_MODEL": ("complex_model", "str"),
+    "JEV_ROUTER_AUTO_APPROVE_ENABLED": ("auto_approve_enabled", "bool"),
+    "JEV_ROUTER_AUTO_APPROVE_CONFIDENCE": ("auto_approve_confidence", "float"),
+    "JEV_ROUTER_AUTO_APPROVE_TIMEOUT": ("auto_approve_timeout_seconds", "float"),
+    "JEV_ROUTER_AUTO_APPROVE_HARDLINE_ENABLED": ("auto_approve_hardline_enabled", "bool"),
 }
 
 

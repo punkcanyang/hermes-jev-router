@@ -29,3 +29,10 @@ plugins:
         trim_enabled: true
         main_model: deepseek-flash
         cheap_model: deepseek-flash
+
+  # --- 自动同意（默认全关；$0 mock 可用 JEV_ROUTER_AUTO_APPROVE_MOCK=approve|deny|unsure|...）---
+  auto_approve_enabled: false          # 或 JEV_ROUTER_AUTO_APPROVE_ENABLED=true
+  auto_approve_confidence: 0.80        # 与路由 min_confidence: 0.55 分开
+  auto_approve_timeout_seconds: 8.0
+  auto_approve_hardline_enabled: false # 第二开关；开启前须 CLI/gateway 风险确认写 hardline-ack.json
+
