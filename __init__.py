@@ -9,11 +9,13 @@ try:
     from .routing import decide_and_cache, pop_decision
     from .settings import load_settings
     from .engine import TrimThenCompressEngine
+    from .auto_approve import try_register_approval_policy
 except ImportError:  # script / flat import
     from events import emit
     from routing import decide_and_cache, pop_decision
     from settings import load_settings
     from engine import TrimThenCompressEngine
+    from auto_approve import try_register_approval_policy
 
 logger = logging.getLogger("hermes.plugins.jev_router")
 
@@ -119,3 +121,8 @@ def register(ctx):  # noqa: ANN001
         ctx.register_middleware("llm_request", on_llm_request)
     except Exception as exc:
         logger.warning("register_middleware llm_request failed: %s", exc)
+
+    try:
+        try_register_approval_policy(ctx, plugin_settings)
+    except Exception as exc:
+        logger.warning("auto_approve register failed: %s", exc)

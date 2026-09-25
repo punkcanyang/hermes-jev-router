@@ -6,6 +6,8 @@ description: "Jev（TypeSafe 直连）模型路由 + 强制先 trim 再 compress
 author: "Punkcan / AuraElement studio"
 license: MIT
 tags: [routing, compression, jev, typesafe]
+provides:
+  - approval_policy
 provides_hooks:
   - pre_llm_call
   - pre_auxiliary_call
@@ -26,3 +28,8 @@ config_schema:
   long_context_model: {type: str, default: "deepseek-chat", description: "长上下文模型"}
   keep_last_n_turns: {type: int, default: 6, description: "trim 保留最近 N 轮"}
   drop_old_tool_noise: {type: bool, default: true, description: "丢弃过旧工具噪声"}
+  auto_approve_enabled: {type: bool, default: false, description: "开／关 Jev 自动同意（亦可用 JEV_ROUTER_AUTO_APPROVE_ENABLED；默认关）"}
+  auto_approve_confidence: {type: float, default: 0.80, description: "自动同意置信门槛（与路由 min_confidence 分开；低于 0.5 按 0.5 计）"}
+  auto_approve_timeout_seconds: {type: float, default: 8.0, description: "自动同意 Jev 调用超时（秒）"}
+  auto_approve_hardline_enabled: {type: bool, default: false, description: "第二开关：允许对硬禁询问 Jev（须先风险确认 ack；主开关关则无效）"}
+

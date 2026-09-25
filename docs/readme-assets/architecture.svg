@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-labelledby="t d">
+  <title id="t">jev-router architecture</title>
+  <desc id="d">Hermes chat flows through Jev routing then trim_compress engine.</desc>
+  <rect width="1200" height="260" rx="24" fill="#0A0C10"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif">
+    <text x="56" y="44" fill="#9AA3B2" font-size="15" letter-spacing="1.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">ARCHITECTURE</text>
+    <g transform="translate(56 70)">
+      <rect width="240" height="140" rx="14" fill="#12151C" stroke="#2A303C"/>
+      <text x="24" y="40" fill="#F2F4F7" font-size="20" font-weight="600">Hermes chat</text>
+      <text x="24" y="72" fill="#9AA3B2" font-size="15">照常对话即可</text>
+      <text x="24" y="100" fill="#9AA3B2" font-size="15">plugins.entries.jev-router</text>
+    </g>
+    <text x="320" y="145" fill="#7CFFB2" font-size="28">→</text>
+    <g transform="translate(360 70)">
+      <rect width="280" height="140" rx="14" fill="#12151C" stroke="#7CFFB2"/>
+      <text x="24" y="40" fill="#7CFFB2" font-size="20" font-weight="600">Jev routing</text>
+      <text x="24" y="72" fill="#C8CED8" font-size="15">Choice → label + model</text>
+      <text x="24" y="100" fill="#9AA3B2" font-size="15">min_confidence / timeout</text>
+    </g>
+    <text x="664" y="145" fill="#6EA8FE" font-size="28">→</text>
+    <g transform="translate(704 70)">
+      <rect width="440" height="140" rx="14" fill="#12151C" stroke="#6EA8FE"/>
+      <text x="24" y="40" fill="#6EA8FE" font-size="20" font-weight="600">trim_compress</text>
+      <text x="24" y="72" fill="#C8CED8" font-size="15">强制 trim → compress</text>
+      <text x="24" y="100" fill="#9AA3B2" font-size="15">keep_last_n_turns · drop_old_tool_noise</text>
+    </g>
+  </g>
+</svg>

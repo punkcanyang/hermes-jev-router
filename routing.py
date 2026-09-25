@@ -4,28 +4,48 @@ from __future__ import annotations
 import os
 import sys
 import threading
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
 try:
     from .settings import candidate_labels, load_settings
-    from .events import emit
+    from .events import emit, scrub
+    from .timeouts import FuturesTimeout, call_with_timeout
 except ImportError:
     from settings import candidate_labels, load_settings
-    from events import emit
+    from events import emit, scrub
+    from timeouts import FuturesTimeout, call_with_timeout
 
-# 回合级缓存：pre_llm_call 写，llm_request middleware 读
-_TURN_DECISIONS: dict[str, dict[str, Any]] = {}
+# 回合级缓存：pre_llm_call 写，llm_request middleware 读（同一回合可能多次读，故读不删；按 LRU 限长）
+_TURN_DECISIONS: OrderedDict[str, dict[str, Any]] = OrderedDict()
+_MAX_CACHED_DECISIONS = 256
 _lock = threading.Lock()
 
 
+def _typesafe_site_dirs() -> list[Path]:
+    """typesafe_sdk 不在 Hermes 解释器里时，从环境变量指定的 venv 补路径。
+
+    JEV_ROUTER_TYPESAFE_SITE_PACKAGES：site-packages 目录（可用 os.pathsep 分隔多个）
+    JEV_ROUTER_TYPESAFE_VENV：venv 根目录；只取与当前解释器同版本的 site-packages
+    """
+    dirs: list[Path] = []
+    explicit = os.environ.get("JEV_ROUTER_TYPESAFE_SITE_PACKAGES", "").strip()
+    if explicit:
+        dirs.extend(Path(p).expanduser() for p in explicit.split(os.pathsep) if p.strip())
+    venv = os.environ.get("JEV_ROUTER_TYPESAFE_VENV", "").strip()
+    if venv:
+        ver = f"python{sys.version_info.major}.{sys.version_info.minor}"
+        dirs.append(Path(venv).expanduser() / "lib" / ver / "site-packages")
+    return [d for d in dirs if d.is_dir()]
+
+
 def _ensure_typesafe_path() -> None:
-    venv_site = Path("/workspace/tools/typesafe-venv/lib/python3.13/site-packages")
-    if venv_site.is_dir():
-        p = str(venv_site)
+    # append 而非 insert(0)：不遮蔽 Hermes 自己的依赖
+    for d in _typesafe_site_dirs():
+        p = str(d)
         if p not in sys.path:
-            sys.path.insert(0, p)
+            sys.path.append(p)
 
 
 def _heuristic_route(text: str, cfg: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
@@ -150,9 +170,7 @@ def route_turn(
         return _jev_choice(user_message, cfg, meta)
 
     try:
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            fut = pool.submit(_call)
-            out = fut.result(timeout=timeout)
+        out = call_with_timeout(_call, timeout)
     except FuturesTimeout:
         out = {
             "label": "primary",
@@ -170,10 +188,10 @@ def route_turn(
             "fallback": True,
             "reason": f"jev_error:{type(exc).__name__}",
             "backend": "typesafe",
-            "error": str(exc)[:200],
+            "error": scrub(str(exc))[:200],
         }
 
-    if float(out.get("confidence") or 0) < min_conf:
+    if not out.get("fallback") and float(out.get("confidence") or 0) < min_conf:
         out = {
             **out,
             "model": primary,
@@ -189,6 +207,9 @@ def route_turn(
 def cache_decision(key: str, decision: dict[str, Any]) -> None:
     with _lock:
         _TURN_DECISIONS[key] = decision
+        _TURN_DECISIONS.move_to_end(key)
+        while len(_TURN_DECISIONS) > _MAX_CACHED_DECISIONS:
+            _TURN_DECISIONS.popitem(last=False)
 
 
 def pop_decision(key: str) -> dict[str, Any] | None:
