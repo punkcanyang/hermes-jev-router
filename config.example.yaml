@@ -1,0 +1,31 @@
+# 复制到 ~/.hermes/jev-router.yaml，或写入 ~/.hermes/config.yaml 的 jev_router: 块
+# 密钥只走环境变量 TYPESAFE_API_KEY，不要写进本文件或 git。
+
+jev_router:
+  enabled: true          # 或环境变量 JEV_ROUTER_ROUTING_ENABLED=false（或 HERMES_JEV_ROUTING=0） 强制关
+  trim_enabled: true     # 或环境变量 JEV_ROUTER_TRIM_ENABLED=false（或 HERMES_JEV_TRIM=0） 强制关
+  min_confidence: 0.55
+  timeout_seconds: 8.0
+  jev_model: jev-latest
+  # 候选：main = 当前 Hermes 主模型；cheap = 可配第二模型
+  # 若只有一个模型，main=cheap=deepseek-flash 仍可跑对照评测
+  main_model: deepseek-flash
+  cheap_model: deepseek-flash
+  keep_last_n_turns: 6
+  drop_old_tool_noise: true
+  event_log: ~/.hermes/jev-router/events.jsonl
+
+# 激活 trim→compress 引擎（必须显式设置；插件不会自动顶替默认 compressor）
+context:
+  engine: trim_compress
+
+# 插件启用示例
+plugins:
+  entries:
+    jev-router:
+      enabled: true
+      settings:
+        enabled: true
+        trim_enabled: true
+        main_model: deepseek-flash
+        cheap_model: deepseek-flash
