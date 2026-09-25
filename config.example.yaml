@@ -13,7 +13,13 @@ jev_router:
   cheap_model: deepseek-flash
   keep_last_n_turns: 6
   drop_old_tool_noise: true
-  event_log: ~/.hermes/jev-router/events.jsonl
+  # event_log: ~/.hermes/jev-router/events.jsonl   # 默认 $HERMES_HOME/jev-router/events.jsonl
+
+  # --- 自动同意（默认全关；需宿主提供 register_approval_policy）---
+  auto_approve_enabled: false          # 或 JEV_ROUTER_AUTO_APPROVE_ENABLED=true
+  auto_approve_confidence: 0.80        # 与路由 min_confidence 分开；低于 0.5 按 0.5 计
+  auto_approve_timeout_seconds: 8.0    # 实际取 min(本值, 宿主策略超时 - 0.5s)
+  auto_approve_hardline_enabled: false # 第二开关；另须 scripts/hardline_ack.py 风险确认
 
 # 激活 trim→compress 引擎（必须显式设置；插件不会自动顶替默认 compressor）
 context:
@@ -29,10 +35,3 @@ plugins:
         trim_enabled: true
         main_model: deepseek-flash
         cheap_model: deepseek-flash
-
-  # --- 自动同意（默认全关；$0 mock 可用 JEV_ROUTER_AUTO_APPROVE_MOCK=approve|deny|unsure|...）---
-  auto_approve_enabled: false          # 或 JEV_ROUTER_AUTO_APPROVE_ENABLED=true
-  auto_approve_confidence: 0.80        # 与路由 min_confidence: 0.55 分开
-  auto_approve_timeout_seconds: 8.0
-  auto_approve_hardline_enabled: false # 第二开关；开启前须 CLI/gateway 风险确认写 hardline-ack.json
-
