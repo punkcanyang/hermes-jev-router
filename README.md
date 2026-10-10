@@ -11,6 +11,8 @@
 
 硬规矩：只 TypeSafe 直连（环境变量 `TYPESAFE_API_KEY`）；**禁止** Vercel AI Gateway；密钥不进仓、不打印。
 
+作者：[@punkcan](https://x.com/punkcan)
+
 <p align="center">
   <img src="./docs/readme-assets/architecture.svg" width="100%" alt="Hermes chat → Jev routing → trim_compress">
 </p>
